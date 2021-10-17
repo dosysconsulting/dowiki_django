@@ -9,10 +9,10 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.serializers import Serializer
 from rest_framework import generics, permissions
-from wiki.models import Articulo
+from wiki.models import Articulo, Categoria
 #from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from wiki.serializers import ArticuloSerializer
+from wiki.serializers import ArticuloSerializer, CategoriaSerializer
 #from .utils import Util
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
@@ -63,4 +63,42 @@ class ArticuloViewSet(viewsets.ModelViewSet):
             return Response(response, status=status.HTTP_204_NO_CONTENT)
         except ObjectDoesNotExist:
             response = {'message': 'Bad data, Articulo not exists'}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CategoriaViewSet(viewsets.ModelViewSet):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
+    #authentication_classes = (TokenAuthentication, )
+    #permission_classes = (IsAdminUser,)
+    permission_classes = (AllowAny,)
+   
+    @action(detail=True, methods=['POST'])
+    def categoria(self, request, pk=None):
+        id_categoria = pk
+        categoria = request.data['categoria']
+        try:
+            categoria = Categoria.objects.get(id_categoria=id_categoria)
+            categoria.categoria = categoria
+            categoria.save()
+            serializer = CategoriaSerializer(categoria)
+            response = {'message': 'Categoria updated', 'result': serializer.data}
+            return Response(response, status=status.HTTP_200_OK)
+        except:
+            categoria = Categoria.objects.create(id_categoria=id_categoria,
+                                           categoria=categoria
+                                               )
+            serializer = CategoriaSerializer(categoria)
+            response = {'message': 'Categoria created', 'result': serializer.data}
+            return Response(response, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['DELETE'])
+    def delete(self, request, pk=None):
+        try:
+            categoria = Categoria.objects.get(id_categoria=pk)
+            categoria.delete()
+            response = {'message': 'Categoria deleted'}
+            return Response(response, status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist:
+            response = {'message': 'Bad data, categoria not exists'}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
